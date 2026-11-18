@@ -1,9 +1,8 @@
+import { CollapsiblePanel } from './CollapsiblePanel.jsx'
+
 export function ColorControls({ faceColor, markColor, onFaceColor, onMarkColor }) {
   return (
-    <section className="panel color-panel" aria-labelledby="colors-heading">
-      <div className="panel__head">
-        <h2 id="colors-heading">Dice colors</h2>
-      </div>
+    <CollapsiblePanel title="Dice colors" headingId="colors-heading" className="color-panel">
       <div className="color-panel__fields">
         <label className="color-field">
           <span>Face</span>
@@ -22,6 +21,6 @@ export function ColorControls({ faceColor, markColor, onFaceColor, onMarkColor }
           />
         </label>
       </div>
-    </section>
+    </CollapsiblePanel>
   )
 }

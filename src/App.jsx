@@ -7,8 +7,10 @@ import {
   EMPTY_MODIFIERS,
   ROLL_ANIMATION_MS,
   clampCount,
+  applyD20Advantage,
   clampModifier,
   formatRollNotation,
+  isTwoD20Only,
   rollSelection,
   singleTypeCounts,
 } from './lib/dice.js'
@@ -34,14 +36,15 @@ export default function App() {
   }, [persisted])
 
   const commitRoll = useCallback(
-    (nextRoll, selectionCounts, selectionModifiers) => {
-      const notation = formatRollNotation(selectionCounts, selectionModifiers)
+    (nextRoll, selectionCounts, selectionModifiers, options = {}) => {
+      const { notation: notationOverride, historyDice } = options
+      const notation = notationOverride ?? formatRollNotation(selectionCounts, selectionModifiers)
       const historyEntry = {
         id: nextRoll.id,
         timestamp: nextRoll.timestamp,
         total: nextRoll.total,
         notation,
-        dice: nextRoll.dice,
+        dice: historyDice ?? nextRoll.allDice ?? nextRoll.dice,
       }
 
       setRoll(nextRoll)
@@ -72,6 +75,17 @@ export default function App() {
 
   function rollSelected() {
     startRoll(counts)
+  }
+
+  function rollSelectedD20Advantage(mode) {
+    if (!isTwoD20Only(counts)) return
+    const raw = rollSelection(counts, { modifiers })
+    const nextRoll = applyD20Advantage(raw, mode)
+    const suffix = mode === 'advantage' ? ' (advantage)' : ' (disadvantage)'
+    commitRoll(nextRoll, counts, modifiers, {
+      notation: `${formatRollNotation(counts, modifiers)}${suffix}`,
+      historyDice: nextRoll.dice,
+    })
   }
 
   function setCount(sides, count) {
@@ -133,6 +147,8 @@ export default function App() {
           onModifier={setModifier}
           onRollOne={rollOne}
           onRoll={rollSelected}
+          onRollAdvantage={() => rollSelectedD20Advantage('advantage')}
+          onRollDisadvantage={() => rollSelectedD20Advantage('disadvantage')}
           onReset={resetCounts}
         />
         <aside className="sidebar" aria-label="Appearance and history">

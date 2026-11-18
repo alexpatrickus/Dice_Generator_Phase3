@@ -173,6 +173,12 @@ h1, h2, p { margin: 0; }
   font-size: 1.85rem;
 }
 
+.tray-total--scramble,
+.tray__row-result__total--scramble {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.92;
+}
+
 .tray-panel__hint {
   margin: 0;
   text-align: right;
@@ -498,6 +504,21 @@ h1, h2, p { margin: 0; }
   padding-bottom: 4px;
 }
 
+.tray__adv-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.button--adv {
+  width: 100%;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 10px 8px;
+  text-wrap: balance;
+}
+
 .button--roll {
   width: 100%;
   font-weight: 700;
@@ -664,6 +685,50 @@ h1 {
   margin-top: 6%;
 }
 
+.die--dropped {
+  opacity: 0.55;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.18));
+}
+
+.die--dropped .die__shape {
+  filter: grayscale(0.9);
+  opacity: 0.72;
+}
+
+.die--dropped .die__type,
+.die--dropped .die__value {
+  color: var(--muted) !important;
+}
+
+.die--kept-advantage .die__shape {
+  box-shadow:
+    inset 0 0 0 2px var(--roll-high),
+    inset 0 -8px 12px rgba(0, 0, 0, 0.1);
+}
+
+.die--kept-advantage .die__value {
+  color: var(--roll-high) !important;
+}
+
+.die--kept-disadvantage .die__shape {
+  box-shadow:
+    inset 0 0 0 2px var(--roll-low),
+    inset 0 -8px 12px rgba(0, 0, 0, 0.1);
+}
+
+.die--kept-disadvantage .die__value {
+  color: var(--roll-low) !important;
+}
+
+.tray__popover-kept {
+  color: var(--roll-high);
+  font-weight: 700;
+}
+
+.tray__popover-dropped {
+  color: var(--muted);
+}
+
 .die--tumbling .die__shape {
   transform-origin: center center;
 }
@@ -700,6 +765,64 @@ h1 {
   100% {
     transform: rotate(360deg) scale(1);
   }
+}
+
+.collapsible-panel__head {
+  align-items: center;
+}
+
+.collapsible-panel__trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.collapsible-panel__trigger:hover {
+  color: var(--amber);
+}
+
+.collapsible-panel__trigger:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.collapsible-panel__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.collapsible-panel__chevron {
+  flex-shrink: 0;
+  width: 1.25rem;
+  text-align: center;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.collapsible-panel__chevron::before {
+  content: '▾';
+  display: block;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.collapsible-panel__trigger[aria-expanded='false'] .collapsible-panel__chevron {
+  transform: rotate(-90deg);
+}
+
+.collapsible-panel__body[hidden] {
+  display: none !important;
 }
 
 .color-panel__fields {

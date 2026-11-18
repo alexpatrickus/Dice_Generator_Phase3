@@ -65,6 +65,42 @@ export function totalDice(counts) {
   return DIE_TYPES.reduce((sum, sides) => sum + clampCount(counts?.[sides] ?? 0), 0)
 }
 
+/** True when the tray holds exactly two D20 and no other dice. */
+export function isTwoD20Only(counts) {
+  if (clampCount(counts?.[20]) !== 2) return false
+  return DIE_TYPES.every((sides) => sides === 20 || clampCount(counts?.[sides] ?? 0) === 0)
+}
+
+/**
+ * After a normal roll, keep one D20 (highest or lowest) for display and totals.
+ * `allDice` retains both rolled D20s for tooltips and history.
+ */
+export function applyD20Advantage(roll, mode) {
+  if (mode !== 'advantage' && mode !== 'disadvantage') return roll
+  const d20s = roll.dice.filter((die) => die.sides === 20)
+  if (d20s.length !== 2) return roll
+
+  const kept =
+    mode === 'advantage'
+      ? d20s.reduce((best, die) => (die.value > best.value ? die : best))
+      : d20s.reduce((best, die) => (die.value < best.value ? die : best))
+
+  const dice = d20s.map((die) => ({
+    ...die,
+    advantageOutcome: die.id === kept.id ? 'kept' : 'dropped',
+  }))
+
+  return {
+    ...roll,
+    advantage: mode,
+    keptDieId: kept.id,
+    allDice: dice,
+    dice,
+    sums: { ...roll.sums, 20: kept.value },
+    total: kept.value,
+  }
+}
+
 /** Human-readable pool notation, e.g. `2d6+3 + 1d20`. */
 export function formatRollNotation(counts, modifiers = EMPTY_MODIFIERS) {
   const parts = []
