@@ -27,9 +27,11 @@ export function DiceTray({
   return (
     <section className="panel tray-panel" aria-labelledby="tray-heading">
       <div className="panel__head tray-panel__head tray-panel__head--grid">
-        <h2 id="tray-heading">Dice</h2>
-        <span className="tray__col-label">Modifier</span>
-        <span className="tray__col-label">Number</span>
+        <div className="tray__head-controls">
+          <h2 id="tray-heading">Dice</h2>
+          <span className="tray__col-label tray__col-label--modifier">Modifier</span>
+          <span className="tray__col-label tray__col-label--number">Number</span>
+        </div>
         <span className="tray__col-spacer" aria-hidden="true" />
         {roll ? (
           <p className="tray-panel__total" aria-label={`Grand total ${roll.total}`}>
@@ -50,58 +52,62 @@ export function DiceTray({
 
           return (
             <li key={sides} className="tray__row">
-              <button
-                type="button"
-                className={`die-roll die-roll--d${sides}`}
-                aria-label={`Roll D${sides}`}
-                disabled={animating}
-                onClick={() => onRollOne(sides)}
-              >
-                <span className="die-roll__shape">
-                  <span className="die-roll__label">D{sides}</span>
-                </span>
-              </button>
-              <div className="stepper stepper--modifier" aria-label={`Modifier for D${sides}`}>
-                <button
-                  type="button"
-                  className="stepper__triangle stepper__triangle--left"
-                  aria-label={`Decrease D${sides} modifier`}
-                  disabled={modifier <= -MAX_MODIFIER}
-                  onClick={() => onModifier(sides, modifier - 1)}
-                >
-                  <span className="sr-only">Decrease modifier</span>
-                </button>
-                <span aria-live="polite">{formatModifier(modifier)}</span>
-                <button
-                  type="button"
-                  className="stepper__triangle stepper__triangle--right"
-                  aria-label={`Increase D${sides} modifier`}
-                  disabled={modifier >= MAX_MODIFIER}
-                  onClick={() => onModifier(sides, modifier + 1)}
-                >
-                  <span className="sr-only">Increase modifier</span>
-                </button>
-              </div>
-              <div className="stepper">
-                <button
-                  type="button"
-                  aria-label={`Remove one D${sides}`}
-                  disabled={count === 0}
-                  onClick={() => onCount(sides, count - 1)}
-                >
-                  −
-                </button>
-                <span aria-live="polite" aria-label={`${count} D${sides}`}>
-                  {count}
-                </span>
-                <button
-                  type="button"
-                  aria-label={`Add one D${sides}`}
-                  disabled={count >= MAX_DICE_PER_TYPE}
-                  onClick={() => onCount(sides, count + 1)}
-                >
-                  +
-                </button>
+              <div className="tray__row-controls">
+                <div className="tray__die-cell">
+                  <button
+                    type="button"
+                    className={`die-roll die-roll--d${sides}`}
+                    aria-label={`Roll D${sides}`}
+                    disabled={animating}
+                    onClick={() => onRollOne(sides)}
+                  >
+                    <span className="die-roll__shape">
+                      <span className="die-roll__label">D{sides}</span>
+                    </span>
+                  </button>
+                </div>
+                <div className="stepper stepper--modifier" aria-label={`Modifier for D${sides}`}>
+                  <button
+                    type="button"
+                    className="stepper__triangle stepper__triangle--left"
+                    aria-label={`Decrease D${sides} modifier`}
+                    disabled={modifier <= -MAX_MODIFIER}
+                    onClick={() => onModifier(sides, modifier - 1)}
+                  >
+                    <span className="sr-only">Decrease modifier</span>
+                  </button>
+                  <span aria-live="polite">{formatModifier(modifier)}</span>
+                  <button
+                    type="button"
+                    className="stepper__triangle stepper__triangle--right"
+                    aria-label={`Increase D${sides} modifier`}
+                    disabled={modifier >= MAX_MODIFIER}
+                    onClick={() => onModifier(sides, modifier + 1)}
+                  >
+                    <span className="sr-only">Increase modifier</span>
+                  </button>
+                </div>
+                <div className="stepper stepper--count">
+                  <button
+                    type="button"
+                    aria-label={`Remove one D${sides}`}
+                    disabled={count === 0}
+                    onClick={() => onCount(sides, count - 1)}
+                  >
+                    −
+                  </button>
+                  <span aria-live="polite" aria-label={`${count} D${sides}`}>
+                    {count}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`Add one D${sides}`}
+                    disabled={count >= MAX_DICE_PER_TYPE}
+                    onClick={() => onCount(sides, count + 1)}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
               <div
                 className={`tray__row-result${rolledCount > 0 ? ' tray__row-result--interactive' : ''}`}
@@ -115,10 +121,10 @@ export function DiceTray({
               >
                 {roll && rolledCount > 0 ? (
                   <>
-                    <span>
+                    <span className="tray__row-result__notation">
                       {rolledCount}d{sides}
                     </span>
-                    <strong>{rolledSum}</strong>
+                    <strong className="tray__row-result__total">{rolledSum}</strong>
                     <p className="tray__row-popover" role="tooltip">
                       {rolledDice.map((die) => (
                         <span key={die.id}>{formatDieBreakdown(die)}</span>

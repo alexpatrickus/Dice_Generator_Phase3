@@ -75,7 +75,11 @@ export default function App() {
   }
 
   function setCount(sides, count) {
-    setCounts((current) => ({ ...current, [sides]: clampCount(count) }))
+    const next = clampCount(count)
+    setCounts((current) => ({ ...current, [sides]: next }))
+    if (next === 0) {
+      setModifiers((current) => ({ ...current, [sides]: 0 }))
+    }
   }
 
   function resetCounts() {
@@ -86,7 +90,16 @@ export default function App() {
   }
 
   function setModifier(sides, modifier) {
-    setModifiers((current) => ({ ...current, [sides]: clampModifier(modifier) }))
+    const next = clampModifier(modifier)
+    setModifiers((current) => ({ ...current, [sides]: next }))
+    if (next !== 0) {
+      setCounts((current) => {
+        if (clampCount(current[sides] ?? 0) === 0) {
+          return { ...current, [sides]: 1 }
+        }
+        return current
+      })
+    }
   }
 
   function setFaceColor(next) {
