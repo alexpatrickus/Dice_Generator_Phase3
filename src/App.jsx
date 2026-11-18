@@ -1,0 +1,137 @@
+import { useCallback, useEffect, useState } from 'react'
+import { DiceTray } from './components/DiceTray.jsx'
+import { ColorControls } from './components/ColorControls.jsx'
+import { History } from './components/History.jsx'
+import {
+  EMPTY_COUNTS,
+  EMPTY_MODIFIERS,
+  ROLL_ANIMATION_MS,
+  clampCount,
+  clampModifier,
+  formatRollNotation,
+  rollSelection,
+  singleTypeCounts,
+} from './lib/dice.js'
+import {
+  loadPersistedState,
+  prependHistory,
+  savePersistedState,
+} from './lib/storage.js'
+import { useReducedMotion } from './lib/useReducedMotion.js'
+
+export default function App() {
+  const reducedMotion = useReducedMotion()
+  const [persisted, setPersisted] = useState(() => loadPersistedState())
+  const [counts, setCounts] = useState(EMPTY_COUNTS)
+  const [modifiers, setModifiers] = useState(EMPTY_MODIFIERS)
+  const [roll, setRoll] = useState(null)
+  const [animating, setAnimating] = useState(false)
+
+  const { faceColor, markColor, history } = persisted
+
+  useEffect(() => {
+    savePersistedState(persisted)
+  }, [persisted])
+
+  const commitRoll = useCallback(
+    (nextRoll, selectionCounts, selectionModifiers) => {
+      const notation = formatRollNotation(selectionCounts, selectionModifiers)
+      const historyEntry = {
+        id: nextRoll.id,
+        timestamp: nextRoll.timestamp,
+        total: nextRoll.total,
+        notation,
+        dice: nextRoll.dice,
+      }
+
+      setRoll(nextRoll)
+      setPersisted((current) => ({
+        ...current,
+        history: prependHistory(current.history, historyEntry),
+      }))
+
+      if (reducedMotion || nextRoll.dice.length === 0) {
+        setAnimating(false)
+        return
+      }
+      setAnimating(true)
+      window.setTimeout(() => setAnimating(false), ROLL_ANIMATION_MS)
+    },
+    [reducedMotion],
+  )
+
+  function startRoll(nextCounts, selectionModifiers = modifiers) {
+    commitRoll(rollSelection(nextCounts, { modifiers: selectionModifiers }), nextCounts, selectionModifiers)
+  }
+
+  function rollOne(sides) {
+    const nextCounts = singleTypeCounts(sides)
+    setCounts(nextCounts)
+    startRoll(nextCounts)
+  }
+
+  function rollSelected() {
+    startRoll(counts)
+  }
+
+  function setCount(sides, count) {
+    setCounts((current) => ({ ...current, [sides]: clampCount(count) }))
+  }
+
+  function resetCounts() {
+    setCounts(EMPTY_COUNTS)
+    setModifiers(EMPTY_MODIFIERS)
+    setRoll(null)
+    setAnimating(false)
+  }
+
+  function setModifier(sides, modifier) {
+    setModifiers((current) => ({ ...current, [sides]: clampModifier(modifier) }))
+  }
+
+  function setFaceColor(next) {
+    setPersisted((current) => ({ ...current, faceColor: next }))
+  }
+
+  function setMarkColor(next) {
+    setPersisted((current) => ({ ...current, markColor: next }))
+  }
+
+  function clearHistory() {
+    setPersisted((current) => ({ ...current, history: [] }))
+  }
+
+  return (
+    <div className="app">
+      <header className="masthead">
+        <p className="eyebrow">Table dice · Phase 3</p>
+        <h1>Dice Generator</h1>
+        <p>Roll with animation, custom face colors, and a saved history of your last 20 rolls.</p>
+      </header>
+      <main className="layout layout--split">
+        <DiceTray
+          counts={counts}
+          modifiers={modifiers}
+          roll={roll}
+          animating={animating}
+          faceColor={faceColor}
+          markColor={markColor}
+          onCount={setCount}
+          onModifier={setModifier}
+          onRollOne={rollOne}
+          onRoll={rollSelected}
+          onReset={resetCounts}
+        />
+        <aside className="sidebar" aria-label="Appearance and history">
+          <ColorControls
+            faceColor={faceColor}
+            markColor={markColor}
+            onFaceColor={setFaceColor}
+            onMarkColor={setMarkColor}
+          />
+          <History history={history} onClear={clearHistory} />
+        </aside>
+      </main>
+    </div>
+  )
+}
