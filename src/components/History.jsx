@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatDieBreakdown } from '../lib/dice.js'
+import { CollapsiblePanel } from './CollapsiblePanel.jsx'
 
 function formatTime(timestamp) {
   try {
@@ -17,9 +18,11 @@ export function History({ history, onClear }) {
   const [openId, setOpenId] = useState(null)
 
   return (
-    <section className="panel history-panel" aria-labelledby="history-heading">
-      <div className="panel__head">
-        <h2 id="history-heading">Roll history</h2>
+    <CollapsiblePanel
+      title="Roll history"
+      headingId="history-heading"
+      className="history-panel"
+      actions={
         <button
           type="button"
           className="button button--ghost"
@@ -28,7 +31,8 @@ export function History({ history, onClear }) {
         >
           Clear
         </button>
-      </div>
+      }
+    >
       {history.length === 0 ? (
         <p className="muted history-panel__empty">No rolls yet.</p>
       ) : (
@@ -61,6 +65,6 @@ export function History({ history, onClear }) {
           })}
         </ul>
       )}
-    </section>
+    </CollapsiblePanel>
   )
 }

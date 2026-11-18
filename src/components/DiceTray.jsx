@@ -4,8 +4,10 @@ import {
   MAX_MODIFIER,
   formatDieBreakdown,
   formatModifier,
+  isTwoD20Only,
   totalDice,
 } from '../lib/dice.js'
+import { useScrambleTotals } from '../lib/useScrambleTotals.js'
 import { DiceFace } from './DiceFace.jsx'
 
 export function DiceTray({
@@ -19,13 +21,21 @@ export function DiceTray({
   onModifier,
   onRollOne,
   onRoll,
+  onRollAdvantage,
+  onRollDisadvantage,
   onReset,
 }) {
   const facesRevealed = !animating
   const selected = totalDice(counts)
+  const twoD20Only = isTwoD20Only(counts)
+  const displayTotals = useScrambleTotals(roll, animating)
 
   return (
-    <section className="panel tray-panel" aria-labelledby="tray-heading">
+    <section
+      className={`panel tray-panel${animating ? ' tray-panel--rolling' : ''}`}
+      aria-labelledby="tray-heading"
+      aria-busy={animating}
+    >
       <div className="panel__head tray-panel__head tray-panel__head--grid">
         <div className="tray__head-controls">
           <h2 id="tray-heading">Dice</h2>
@@ -34,8 +44,12 @@ export function DiceTray({
         </div>
         <span className="tray__col-spacer" aria-hidden="true" />
         {roll ? (
-          <p className="tray-panel__total" aria-label={`Grand total ${roll.total}`}>
-            Total <strong>{roll.total}</strong>
+          <p
+            className="tray-panel__total"
+            aria-label={animating ? 'Rolling, total updating' : `Grand total ${roll.total}`}
+          >
+            Total{' '}
+            <strong className={animating ? 'tray-total--scramble' : undefined}>{displayTotals.total}</strong>
           </p>
         ) : (
           <p className="tray-panel__hint muted">Result</p>
@@ -46,9 +60,11 @@ export function DiceTray({
           const count = counts[sides] ?? 0
           const modifier = modifiers[sides] ?? 0
           const rolledDice = roll?.dice.filter((die) => die.sides === sides) ?? []
-          const rolledCount = rolledDice.length
-          const rolledSum = roll?.sums[sides] ?? 0
-          const rollDetailText = rolledDice.map((die) => formatDieBreakdown(die)).join(', ')
+          const diceForBreakdown = rolledDice
+          const rolledCount =
+            roll?.advantage && sides === 20 && count > 0 ? count : rolledDice.length
+          const rolledSum = displayTotals.sums[sides] ?? 0
+          const rollDetailText = diceForBreakdown.map((die) => formatDieBreakdown(die)).join(', ')
 
           return (
             <li key={sides} className="tray__row">
@@ -114,9 +130,11 @@ export function DiceTray({
                 aria-live="polite"
                 tabIndex={rolledCount > 0 ? 0 : undefined}
                 aria-label={
-                  rolledCount > 0
-                    ? `${rolledCount}d${sides} total ${rolledSum}. Individual rolls: ${rollDetailText}`
-                    : undefined
+                  rolledCount > 0 && !animating
+                    ? `${rolledCount}d${sides} total ${roll?.sums[sides] ?? 0}${roll?.advantage ? `. Rolls: ${rollDetailText}` : `. Individual rolls: ${rollDetailText}`}`
+                    : rolledCount > 0 && animating
+                      ? `${rolledCount}d${sides} rolling`
+                      : undefined
                 }
               >
                 {roll && rolledCount > 0 ? (
@@ -124,10 +142,35 @@ export function DiceTray({
                     <span className="tray__row-result__notation">
                       {rolledCount}d{sides}
                     </span>
-                    <strong className="tray__row-result__total">{rolledSum}</strong>
+                    <strong
+                      className={[
+                        'tray__row-result__total',
+                        animating && 'tray__row-result__total--scramble',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      {rolledSum}
+                    </strong>
                     <p className="tray__row-popover" role="tooltip">
-                      {rolledDice.map((die) => (
-                        <span key={die.id}>{formatDieBreakdown(die)}</span>
+                      {diceForBreakdown.map((die) => (
+                        <span
+                          key={die.id}
+                          className={
+                            die.advantageOutcome === 'kept'
+                              ? 'tray__popover-kept'
+                              : die.advantageOutcome === 'dropped'
+                                ? 'tray__popover-dropped'
+                                : undefined
+                          }
+                        >
+                          {formatDieBreakdown(die)}
+                          {die.advantageOutcome === 'kept'
+                            ? ' (used)'
+                            : die.advantageOutcome === 'dropped'
+                              ? ' (ignored)'
+                              : ''}
+                        </span>
                       ))}
                     </p>
                   </>
@@ -152,6 +195,26 @@ export function DiceTray({
             ? 'Select dice to roll'
             : `Roll ${selected} Selected ${selected === 1 ? 'Die' : 'Dice'}`}
         </button>
+        {twoD20Only ? (
+          <div className="tray__adv-row">
+            <button
+              type="button"
+              className="button button--adv"
+              disabled={animating}
+              onClick={onRollDisadvantage}
+            >
+              Roll At Disadvantage
+            </button>
+            <button
+              type="button"
+              className="button button--adv"
+              disabled={animating}
+              onClick={onRollAdvantage}
+            >
+              Roll At Advantage
+            </button>
+          </div>
+        ) : null}
         <button
           type="button"
           className="button button--reset"
@@ -174,6 +237,8 @@ export function DiceTray({
                 markColor={markColor}
                 animating={animating}
                 revealed={facesRevealed}
+                advantageOutcome={die.advantageOutcome}
+                advantageRoll={roll.advantage}
               />
             </li>
           ))}

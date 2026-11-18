@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import { scrambleTotalsForRoll } from './useScrambleTotals.js'
 import {
   DIE_TYPES,
   MAX_DICE_PER_TYPE,
   clampCount,
   clampModifier,
+  applyD20Advantage,
   formatDieBreakdown,
   formatRollNotation,
+  isTwoD20Only,
   rollDie,
   rollSelection,
   rollValueTone,
@@ -37,6 +40,57 @@ describe('rollDie', () => {
 
   it('rejects an unsupported die', () => {
     expect(() => rollDie(7)).toThrow(/Unsupported die/)
+  })
+})
+
+describe('scrambleTotalsForRoll', () => {
+  it('stays within bounds for one D6', () => {
+    const roll = rollSelection({ 6: 1, 4: 0, 8: 0, 10: 0, 12: 0, 20: 0 })
+    const { total, sums } = scrambleTotalsForRoll(roll)
+    expect(sums[6]).toBeGreaterThanOrEqual(1)
+    expect(sums[6]).toBeLessThanOrEqual(6)
+    expect(total).toBe(sums[6])
+  })
+})
+
+describe('isTwoD20Only', () => {
+  it('is true only for exactly two D20', () => {
+    expect(isTwoD20Only({ 20: 2, 4: 0, 6: 0, 8: 0, 10: 0, 12: 0 })).toBe(true)
+    expect(isTwoD20Only({ 20: 2, 6: 1, 4: 0, 8: 0, 10: 0, 12: 0 })).toBe(false)
+    expect(isTwoD20Only({ 20: 1, 4: 0, 6: 0, 8: 0, 10: 0, 12: 0 })).toBe(false)
+  })
+})
+
+describe('applyD20Advantage', () => {
+  it('keeps the higher D20 total on advantage', () => {
+    const roll = rollSelection({ 20: 2, 4: 0, 6: 0, 8: 0, 10: 0, 12: 0 }, {
+      random: (() => {
+        let i = 0
+        const vals = [0.05, 0.95]
+        return () => vals[i++]
+      })(),
+    })
+    const next = applyD20Advantage(roll, 'advantage')
+    expect(next.dice).toHaveLength(2)
+    expect(next.total).toBe(next.dice.find((d) => d.advantageOutcome === 'kept').value)
+    expect(next.advantage).toBe('advantage')
+    const kept = next.dice.find((d) => d.advantageOutcome === 'kept')
+    const dropped = next.dice.find((d) => d.advantageOutcome === 'dropped')
+    expect(kept.value).toBeGreaterThan(dropped.value)
+  })
+
+  it('keeps the lower D20 total on disadvantage', () => {
+    const roll = rollSelection({ 20: 2, 4: 0, 6: 0, 8: 0, 10: 0, 12: 0 }, {
+      random: (() => {
+        let i = 0
+        const vals = [0.05, 0.95]
+        return () => vals[i++]
+      })(),
+    })
+    const next = applyD20Advantage(roll, 'disadvantage')
+    const kept = next.dice.find((d) => d.advantageOutcome === 'kept')
+    const dropped = next.dice.find((d) => d.advantageOutcome === 'dropped')
+    expect(kept.value).toBeLessThan(dropped.value)
   })
 })
 
